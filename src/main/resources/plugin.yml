@@ -1,0 +1,4 @@
+name: BuildWands
+version: '${project.version}'
+main: me.sllly.buildwands.BuildWands
+api-version: 1.19
