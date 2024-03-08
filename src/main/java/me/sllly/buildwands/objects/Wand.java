@@ -11,13 +11,13 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.util.RayTraceResult;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class Wand {
 
+    public static Map<String, Wand> definedWands = new HashMap<>();
+
+    private String wandId;
     private final String wandGroupId;
     private final int radius;
     private final int maxDurability;
@@ -27,15 +27,62 @@ public class Wand {
     private int durability;
     private Map<Material, Integer> materialAmounts;
 
-    public Wand(String wandGroupId, int radius, int maxDurability, int maxUniqueMaterials, ItemStack originalItem, ItemStack wandItem) {
+    private final String nbtKey = "buildwand";
+
+    public Wand(String wandGroupId, int radius, int maxDurability, int maxUniqueMaterials, ItemStack originalItem) {
         this.wandGroupId = wandGroupId;
         this.radius = radius;
         this.maxDurability = maxDurability;
         this.maxUniqueMaterials = maxUniqueMaterials;
         this.originalItem = originalItem;
-        this.wandItem = wandItem;
+        wandItem = originalItem;
         durability = maxDurability;
         materialAmounts = new HashMap<>();
+
+        updateWandItem();
+    }
+
+    public Wand(ItemStack itemStack){
+        wandId = NbtApiUtils.getNBTString(itemStack, nbtKey+"-wandid");
+        wandGroupId = NbtApiUtils.getNBTString(itemStack, nbtKey+"-group");
+        radius = definedWands.get(wandGroupId).getRadius();
+        maxDurability = definedWands.get(wandGroupId).getMaxDurability();
+        maxUniqueMaterials = definedWands.get(wandGroupId).getMaxUniqueMaterials();
+        originalItem = definedWands.get(wandGroupId).getOriginalItem();
+        wandItem = itemStack;
+        durability = Integer.parseInt(NbtApiUtils.getNBTString(itemStack, nbtKey+"-durability"));
+
+        materialAmounts = new HashMap<>();
+        List<String> nbtKeys = NbtApiUtils.getNBTKeys(wandItem);
+        String nbtMaterialKey = nbtKey+"-material-";
+        for (String key : nbtKeys) {
+            if (key.startsWith(nbtMaterialKey)) {
+                String materialString = key.substring(nbtMaterialKey.length());
+                Material material = Material.getMaterial(materialString.toUpperCase());
+                String intString = NbtApiUtils.getNBTString(wandItem, key);
+                int amount = Integer.parseInt(intString);
+                materialAmounts.put(material, amount);
+            }
+        }
+    }
+
+    public void updateWandItem(){
+        wandItem = originalItem.clone();
+        wandItem = Util.replaceTextInItem(wandItem, "%durability%", durability+"");
+        wandItem = Util.replaceTextInItem(wandItem, "%radius%", radius+"");
+
+        wandItem = NbtApiUtils.applyNBTString(wandItem, nbtKey+"-group", wandGroupId);
+        wandItem = NbtApiUtils.applyNBTString(wandItem, nbtKey+"-durability", durability+"");
+        if (wandId == null) {
+            wandId = UUID.randomUUID().toString();
+            wandItem = NbtApiUtils.applyNBTString(wandItem, nbtKey+"-wandid", wandId);
+        }
+
+
+        for (Map.Entry<Material, Integer> materialIntegerEntry : materialAmounts.entrySet()) {
+            wandItem = NbtApiUtils.applyNBTString(wandItem, nbtKey+"-material-"+materialIntegerEntry.getKey().toString().toLowerCase(),
+                    materialIntegerEntry.getValue()+"");
+        }
     }
 
     public List<Block> findBlocks(Player player, int radius, int maxDistance){
@@ -251,12 +298,12 @@ public class Wand {
         }
     }
 
-    public void updateWandItem(){
-        wandItem = originalItem.clone();
-        wandItem = Util.replaceTextInItem(wandItem, "%durability%", durability+"");
-        wandItem = Util.replaceTextInItem(wandItem, "%radius%", radius+"");
-
-        NbtApiUtils.
+    public static ItemStack getWand(String wandGroupId){
+        Wand wand = definedWands.get(wandGroupId);
+        if (wand == null) {
+            return null;
+        }
+        return wand.getWandItem();
     }
 
     public String getWandGroupId() {
@@ -301,5 +348,9 @@ public class Wand {
 
     public void setMaterialAmounts(Map<Material, Integer> materialAmounts) {
         this.materialAmounts = materialAmounts;
+    }
+
+    public String getWandId() {
+        return wandId;
     }
 }

@@ -36,4 +36,12 @@ public class NbtApiUtils {
         }
         return null;
     }
+
+    public static boolean hasNBTKey(ItemStack itemStack, String key){
+        if (itemStack!= null && itemStack.getType()!= Material.AIR){
+            NBTItem nbtItem = new NBTItem(itemStack);
+            return nbtItem.hasTag(key);
+        }
+        return false;
+    }
 }

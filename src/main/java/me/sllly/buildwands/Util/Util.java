@@ -372,4 +372,17 @@ public class Util {
         File file = new File(plugin.getDataFolder(), path.replace("/", System.lineSeparator()));
         return YamlConfiguration.loadConfiguration(file);
     }
+
+    public static int countEmptySlots(Player player) {
+        ItemStack[] contents = player.getInventory().getStorageContents();
+        int emptySlots = 0;
+
+        for (ItemStack item : contents) {
+            if (item == null) {
+                emptySlots++;
+            }
+        }
+
+        return emptySlots;
+    }
 }
