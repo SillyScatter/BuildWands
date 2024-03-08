@@ -1,20 +1,46 @@
 package me.sllly.buildwands.objects;
 
-import org.bukkit.Bukkit;
+import me.sllly.buildwands.Util.NbtApiUtils;
+import me.sllly.buildwands.Util.Util;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.util.RayTraceResult;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Wand {
+
+    private final String wandGroupId;
+    private final int radius;
+    private final int maxDurability;
+    private final int maxUniqueMaterials;
+    private final ItemStack originalItem;
+    private ItemStack wandItem;
+    private int durability;
+    private Map<Material, Integer> materialAmounts;
+
+    public Wand(String wandGroupId, int radius, int maxDurability, int maxUniqueMaterials, ItemStack originalItem, ItemStack wandItem) {
+        this.wandGroupId = wandGroupId;
+        this.radius = radius;
+        this.maxDurability = maxDurability;
+        this.maxUniqueMaterials = maxUniqueMaterials;
+        this.originalItem = originalItem;
+        this.wandItem = wandItem;
+        durability = maxDurability;
+        materialAmounts = new HashMap<>();
+    }
+
     public List<Block> findBlocks(Player player, int radius, int maxDistance){
         Block centreBlock = player.getTargetBlock(null, maxDistance);
-        if (centreBlock == null) {
+        if (centreBlock.getType() == Material.AIR) {
             return null;
         }
         BlockFace blockFace = getLookedAtBlockFace(player, maxDistance);
@@ -25,7 +51,7 @@ public class Wand {
         if (intArray == null) {
             return null;
         }
-        floodFillFromCenter(intArray, radius+1, radius+1);
+        floodFillFromCenter(intArray, radius, radius);
 
         return blockToChange(intArray, centreBlock, blockFace, radius);
     }
@@ -46,28 +72,55 @@ public class Wand {
         }
     }
 
-    public int[][] getIntArray(Block block, BlockFace blockFace, int radius){
-        int[][] result = new int[radius*2 +1][radius*2 + 1];
+    public int[][] getIntArray(Block block, BlockFace blockFace, int radius) {
+        int[][] result = new int[radius * 2 + 1][radius * 2 + 1];
         World world = block.getWorld();
         int centreX = block.getX();
         int centreY = block.getY();
         int centreZ = block.getZ();
         Material material = block.getType();
 
-        switch (blockFace){
+        switch (blockFace) {
             case UP:
-                for (int dx = -radius; dx < radius; dx++) {
-                    for (int dz = -radius; dz < radius ; dz++) {
-                        if (world.getBlockAt(centreX+dx, centreY, centreZ+dz).getType() == material){
-                            result[dx+radius][dz+radius] = 0;
-                        }else {
-                            result[dx+radius][dz+radius] = 1;
+            case DOWN:
+                for (int dx = -radius; dx <= radius; dx++) {
+                    for (int dz = -radius; dz <= radius; dz++) {
+                        if (world.getBlockAt(centreX + dx, centreY, centreZ + dz).getType() == material) {
+                            result[dx + radius][dz + radius] = 0;
+                        } else {
+                            result[dx + radius][dz + radius] = 1;
                         }
                     }
                 }
+                break;
+            case WEST:
+            case EAST:
+                for (int dy = -radius; dy <= radius; dy++) {
+                    for (int dz = -radius; dz <= radius; dz++) {
+                        if (world.getBlockAt(centreX, centreY+dy, centreZ + dz).getType() == material) {
+                            result[dy + radius][dz + radius] = 0;
+                        } else {
+                            result[dy + radius][dz + radius] = 1;
+                        }
+                    }
+                }
+                break;
+            case SOUTH:
+            case NORTH:
+                for (int dx = -radius; dx <= radius; dx++) {
+                    for (int dy = -radius; dy <= radius; dy++) {
+                        if (world.getBlockAt(centreX + dx, centreY +dy, centreZ).getType() == material) {
+                            result[dx + radius][dy + radius] = 0;
+                        } else {
+                            result[dx + radius][dy + radius] = 1;
+                        }
+                    }
+                }
+                break;
             default:
                 return null;
         }
+        return result;
     }
 
     //ChatGPT Method
@@ -93,17 +146,100 @@ public class Wand {
         int centreX = centreBlock.getX();
         int centreY = centreBlock.getY();
         int centreZ = centreBlock.getZ();
+
+        int rowCount;
+
         switch (blockFace){
             case UP:
-                int rowCount = 0;
+                rowCount = 0;
                 for (int[] row : intArray) {
                     rowCount++;
                     int columnCount = 0;
                     for (int cell : row) {
                         columnCount++;
                         if (cell == 2){
-                            Block newBlock = world.getBlockAt(centreX-radius+rowCount, centreY+1, centreZ-radius+columnCount);
-                            if (newBlock != null && newBlock.getType() != Material.AIR){
+                            Block newBlock = world.getBlockAt(centreX-radius+rowCount-1, centreY+1, centreZ-radius+columnCount-1);
+                            if (newBlock.getType() == Material.AIR){
+                                blocks.add(newBlock);
+                            }
+                        }
+                    }
+                }
+                return blocks;
+            case DOWN:
+                rowCount = 0;
+                for (int[] row : intArray) {
+                    rowCount++;
+                    int columnCount = 0;
+                    for (int cell : row) {
+                        columnCount++;
+                        if (cell == 2){
+                            Block newBlock = world.getBlockAt(centreX-radius+rowCount-1, centreY-1, centreZ-radius+columnCount-1);
+                            if (newBlock.getType() == Material.AIR){
+                                blocks.add(newBlock);
+                            }
+                        }
+                    }
+                }
+                return blocks;
+            case WEST:
+                rowCount = 0;
+                for (int[] row : intArray) {
+                    rowCount++;
+                    int columnCount = 0;
+                    for (int cell : row) {
+                        columnCount++;
+                        if (cell == 2){
+                            Block newBlock = world.getBlockAt(centreX-1, centreY-radius+rowCount-1, centreZ-radius+columnCount-1);
+                            if (newBlock.getType() == Material.AIR){
+                                blocks.add(newBlock);
+                            }
+                        }
+                    }
+                }
+                return blocks;
+            case EAST:
+                rowCount = 0;
+                for (int[] row : intArray) {
+                    rowCount++;
+                    int columnCount = 0;
+                    for (int cell : row) {
+                        columnCount++;
+                        if (cell == 2){
+                            Block newBlock = world.getBlockAt(centreX+1, centreY-radius+rowCount-1, centreZ-radius+columnCount-1);
+                            if (newBlock.getType() == Material.AIR){
+                                blocks.add(newBlock);
+                            }
+                        }
+                    }
+                }
+                return blocks;
+            case NORTH:
+                rowCount = 0;
+                for (int[] row : intArray) {
+                    rowCount++;
+                    int columnCount = 0;
+                    for (int cell : row) {
+                        columnCount++;
+                        if (cell == 2){
+                            Block newBlock = world.getBlockAt(centreX-radius+rowCount-1, centreY-radius+columnCount-1, centreZ-1);
+                            if (newBlock.getType() == Material.AIR){
+                                blocks.add(newBlock);
+                            }
+                        }
+                    }
+                }
+                return blocks;
+            case SOUTH:
+                rowCount = 0;
+                for (int[] row : intArray) {
+                    rowCount++;
+                    int columnCount = 0;
+                    for (int cell : row) {
+                        columnCount++;
+                        if (cell == 2){
+                            Block newBlock = world.getBlockAt(centreX-radius+rowCount-1, centreY-radius+columnCount-1, centreZ+1);
+                            if (newBlock.getType() == Material.AIR){
                                 blocks.add(newBlock);
                             }
                         }
@@ -113,5 +249,57 @@ public class Wand {
             default:
                 return null;
         }
+    }
+
+    public void updateWandItem(){
+        wandItem = originalItem.clone();
+        wandItem = Util.replaceTextInItem(wandItem, "%durability%", durability+"");
+        wandItem = Util.replaceTextInItem(wandItem, "%radius%", radius+"");
+
+        NbtApiUtils.
+    }
+
+    public String getWandGroupId() {
+        return wandGroupId;
+    }
+
+    public int getRadius() {
+        return radius;
+    }
+
+    public int getMaxDurability() {
+        return maxDurability;
+    }
+
+    public int getMaxUniqueMaterials() {
+        return maxUniqueMaterials;
+    }
+
+    public ItemStack getOriginalItem() {
+        return originalItem;
+    }
+
+    public ItemStack getWandItem() {
+        return wandItem;
+    }
+
+    public int getDurability() {
+        return durability;
+    }
+
+    public Map<Material, Integer> getMaterialAmounts() {
+        return materialAmounts;
+    }
+
+    public void setWandItem(ItemStack wandItem) {
+        this.wandItem = wandItem;
+    }
+
+    public void setDurability(int durability) {
+        this.durability = durability;
+    }
+
+    public void setMaterialAmounts(Map<Material, Integer> materialAmounts) {
+        this.materialAmounts = materialAmounts;
     }
 }
