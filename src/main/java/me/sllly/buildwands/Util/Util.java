@@ -13,6 +13,7 @@ import org.bukkit.entity.BlockDisplay;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.Plugin;
 
@@ -391,5 +392,63 @@ public class Util {
             return true; // If item is not null, has item meta, and has enchants, then it's enchanted
         }
         return false; // Otherwise, item is not enchanted
+    }
+
+    /**
+     * Calculates the total amount of unenchanted items of a specific material in a player's inventory.
+     *
+     * @param player The player whose inventory is to be checked.
+     * @param material The material of the items to count.
+     * @return The total amount of unenchanted items of the specified material.
+     */
+    public static int countUnenchantedItemsOfMaterial(Player player, Material material) {
+        PlayerInventory inventory = player.getInventory();
+        ItemStack[] storageContents = inventory.getStorageContents(); // Includes main inventory and hotbar but excludes armor and off-hand
+        int count = 0;
+
+        for (ItemStack item : storageContents) {
+            if (item != null && item.getType() == material && !item.hasItemMeta()) {
+                count += item.getAmount();
+            } else if (item != null && item.getType() == material && item.hasItemMeta() && !item.getItemMeta().hasEnchants()) {
+                // Check specifically for unenchanted items
+                count += item.getAmount();
+            }
+        }
+
+        return count;
+    }
+
+    /**
+     * Removes a specified amount of items of a certain material from a player's inventory.
+     *
+     * @param player The player from whom items will be removed.
+     * @param material The type of material to remove.
+     * @param amount The amount of items to remove.
+     */
+    public static void removeItems(Player player, Material material, int amount) {
+        if (amount <= 0) return; // No items to remove or invalid amount
+
+        PlayerInventory inventory = player.getInventory();
+        ItemStack[] storageContents = inventory.getStorageContents();
+
+        for (int i = 0; i < storageContents.length && amount > 0; i++) {
+            ItemStack item = storageContents[i];
+            if (item != null && item.getType() == material) {
+                int itemAmount = item.getAmount();
+
+                if (itemAmount > amount) {
+                    // If the stack contains more items than we need to remove, just decrease the stack size
+                    item.setAmount(itemAmount - amount);
+                    amount = 0; // All required items removed
+                } else {
+                    // If the stack contains less or equal items than we need to remove, remove the stack and decrease the amount accordingly
+                    inventory.clear(i);
+                    amount -= itemAmount;
+                }
+            }
+        }
+
+        // Update inventory (not always necessary, but good practice after inventory modifications)
+        player.updateInventory();
     }
 }

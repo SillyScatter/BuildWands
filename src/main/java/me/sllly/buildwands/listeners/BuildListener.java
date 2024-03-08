@@ -45,20 +45,40 @@ public class BuildListener implements Listener {
             }
             return;
         }
-        if (wand.getDurability() < blockList.size()){
+        if (wand.getDurability() < blockList.size() && wand.getMaxDurability() != -1){
             Util.sendMessage(event.getPlayer(), BuildWands.languageConfig.notEnoughDurability);
             return;
         }
 
         Integer materialAmount = wand.getMaterialAmounts().get(lookingAtMaterial);
-        if (materialAmount == null || blockList.size() > materialAmount) {
+        int requiredAmount = blockList.size();
+        int combinedAmount = materialAmount != null ? materialAmount : 0; // Amount in wand
+        combinedAmount += Util.countUnenchantedItemsOfMaterial(event.getPlayer(), lookingAtMaterial); // Add amount in player's inventory
+
+        if (combinedAmount < requiredAmount) {
+            // Not enough material in both wand and inventory
             Util.sendMessage(event.getPlayer(), BuildWands.languageConfig.notEnoughMaterial.replace("%material%", lookingAtMaterial.name().toLowerCase()));
             return;
         }
-        wand.getMaterialAmounts().put(lookingAtMaterial, materialAmount-blockList.size());
-        wand.setDurability(wand.getDurability()-blockList.size());
+
+// Determine how much material needs to be taken from the wand
+        int removeFromWand = materialAmount != null ? Math.min(materialAmount, requiredAmount) : 0;
+        if (materialAmount != null) {
+            wand.getMaterialAmounts().put(lookingAtMaterial, materialAmount - removeFromWand);
+        }
+
+// Update wand durability
+        wand.setDurability(wand.getDurability() - requiredAmount);
         wand.updateWandItem();
         event.getPlayer().getInventory().setItemInMainHand(wand.getWandItem());
+
+// Determine how much needs to be taken from the player's inventory
+        int removeFromInventory = requiredAmount - removeFromWand;
+
+// Remove materials from the player's inventory if needed
+        if (removeFromInventory > 0) {
+            Util.removeItems(event.getPlayer(), lookingAtMaterial, removeFromInventory);
+        }
 
         for (Block block : blockList) {
             if (block.getType() == Material.AIR){
