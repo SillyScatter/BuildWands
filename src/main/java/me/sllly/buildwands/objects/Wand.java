@@ -1,5 +1,6 @@
 package me.sllly.buildwands.objects;
 
+import me.sllly.buildwands.BuildWands;
 import me.sllly.buildwands.Util.NbtApiUtils;
 import me.sllly.buildwands.Util.Util;
 import org.bukkit.Material;
@@ -8,7 +9,6 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.util.RayTraceResult;
 
 import java.util.*;
@@ -27,7 +27,7 @@ public class Wand {
     private int durability;
     private Map<Material, Integer> materialAmounts;
 
-    private final String nbtKey = "buildwand";
+    public static final String nbtKey = "buildwand";
 
     public Wand(String wandGroupId, int radius, int maxDurability, int maxUniqueMaterials, ItemStack originalItem) {
         this.wandGroupId = wandGroupId;
@@ -56,17 +56,21 @@ public class Wand {
         List<String> nbtKeys = NbtApiUtils.getNBTKeys(wandItem);
         String nbtMaterialKey = nbtKey+"-material-";
         for (String key : nbtKeys) {
+            //Util.broadcast(key);
             if (key.startsWith(nbtMaterialKey)) {
+                //Util.broadcast("yes");
                 String materialString = key.substring(nbtMaterialKey.length());
                 Material material = Material.getMaterial(materialString.toUpperCase());
                 String intString = NbtApiUtils.getNBTString(wandItem, key);
                 int amount = Integer.parseInt(intString);
+                //Util.broadcast("amount = "+amount);
                 materialAmounts.put(material, amount);
             }
         }
     }
 
     public void updateWandItem(){
+        //Util.broadcast("updateWandItem");
         wandItem = originalItem.clone();
         wandItem = Util.replaceTextInItem(wandItem, "%durability%", durability+"");
         wandItem = Util.replaceTextInItem(wandItem, "%radius%", radius+"");
@@ -75,39 +79,40 @@ public class Wand {
         wandItem = NbtApiUtils.applyNBTString(wandItem, nbtKey+"-durability", durability+"");
         if (wandId == null) {
             wandId = UUID.randomUUID().toString();
-            wandItem = NbtApiUtils.applyNBTString(wandItem, nbtKey+"-wandid", wandId);
         }
+        wandItem = NbtApiUtils.applyNBTString(wandItem, nbtKey+"-wandid", wandId);
 
 
         for (Map.Entry<Material, Integer> materialIntegerEntry : materialAmounts.entrySet()) {
+            //Util.broadcast("&aadding NBT");
             wandItem = NbtApiUtils.applyNBTString(wandItem, nbtKey+"-material-"+materialIntegerEntry.getKey().toString().toLowerCase(),
                     materialIntegerEntry.getValue()+"");
         }
     }
 
-    public List<Block> findBlocks(Player player, int radius, int maxDistance){
-        Block centreBlock = player.getTargetBlock(null, maxDistance);
+    public List<Block> findBlocks(Player player){
+        Block centreBlock = player.getTargetBlock(null, BuildWands.maxDistance);
         if (centreBlock.getType() == Material.AIR) {
             return null;
         }
-        BlockFace blockFace = getLookedAtBlockFace(player, maxDistance);
+        BlockFace blockFace = getLookedAtBlockFace(player);
         if (blockFace == null) {
             return null;
         }
-        int[][] intArray = getIntArray(centreBlock, blockFace, radius);
+        int[][] intArray = getIntArray(centreBlock, blockFace);
         if (intArray == null) {
             return null;
         }
         floodFillFromCenter(intArray, radius, radius);
 
-        return blockToChange(intArray, centreBlock, blockFace, radius);
+        return blockToChange(intArray, centreBlock, blockFace);
     }
 
     //ChatGPT Method
-    public BlockFace getLookedAtBlockFace(Player player, int maxDistance) {
+    public BlockFace getLookedAtBlockFace(Player player) {
         // Perform a ray trace from the player's eye location in the direction they're looking
         // The ray trace will check for blocks up to the specified maxDistance
-        RayTraceResult rayTraceResult = player.getWorld().rayTraceBlocks(player.getEyeLocation(), player.getEyeLocation().getDirection(), maxDistance);
+        RayTraceResult rayTraceResult = player.getWorld().rayTraceBlocks(player.getEyeLocation(), player.getEyeLocation().getDirection(), BuildWands.maxDistance);
 
         // Check if the ray trace hit a block
         if (rayTraceResult != null && rayTraceResult.getHitBlock() != null) {
@@ -119,7 +124,7 @@ public class Wand {
         }
     }
 
-    public int[][] getIntArray(Block block, BlockFace blockFace, int radius) {
+    public int[][] getIntArray(Block block, BlockFace blockFace) {
         int[][] result = new int[radius * 2 + 1][radius * 2 + 1];
         World world = block.getWorld();
         int centreX = block.getX();
@@ -187,7 +192,7 @@ public class Wand {
         floodFillFromCenter(grid, startingRow, startingColumn - 1); // left
     }
 
-    public List<Block> blockToChange(int[][] intArray, Block centreBlock, BlockFace blockFace, int radius){
+    public List<Block> blockToChange(int[][] intArray, Block centreBlock, BlockFace blockFace){
         List<Block> blocks = new ArrayList<>();
         World world = centreBlock.getWorld();
         int centreX = centreBlock.getX();

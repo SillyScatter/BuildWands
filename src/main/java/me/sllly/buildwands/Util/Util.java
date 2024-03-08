@@ -385,4 +385,11 @@ public class Util {
 
         return emptySlots;
     }
+
+    public static boolean isItemEnchanted(ItemStack item) {
+        if (item != null && item.hasItemMeta() && item.getItemMeta().hasEnchants()) {
+            return true; // If item is not null, has item meta, and has enchants, then it's enchanted
+        }
+        return false; // Otherwise, item is not enchanted
+    }
 }

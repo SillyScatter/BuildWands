@@ -2,7 +2,12 @@ package me.sllly.buildwands;
 
 import me.sllly.buildwands.Util.Util;
 import me.sllly.buildwands.commands.BuildWandCommandSystem;
+import me.sllly.buildwands.files.GeneralConfig;
+import me.sllly.buildwands.files.LanguageConfig;
 import me.sllly.buildwands.files.WandConfig;
+import me.sllly.buildwands.listeners.AddMaterialListener;
+import me.sllly.buildwands.listeners.BuildListener;
+import me.sllly.buildwands.listeners.ParticleListener;
 import me.sllly.buildwands.objects.Wand;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -11,16 +16,24 @@ import java.io.File;
 public final class BuildWands extends JavaPlugin {
 
     public static BuildWands plugin;
+    public static int maxDistance = 5;
+    public static LanguageConfig languageConfig;
+    public static GeneralConfig generalConfig;
 
     private File wandDirectory;
+
 
     @Override
     public void onEnable() {
         plugin = this;
 
         new BuildWandCommandSystem("buildwands", "bw").registerCommandBranch(this);
+        getServer().getPluginManager().registerEvents(new BuildListener(), this);
+        getServer().getPluginManager().registerEvents(new ParticleListener(), this);
+        getServer().getPluginManager().registerEvents(new AddMaterialListener(), this);
 
         initializeDirectories();
+        reloadConfigs();
         reloadWands();
     }
 
@@ -34,6 +47,13 @@ public final class BuildWands extends JavaPlugin {
         if (!wandDirectory.exists()) {
             wandDirectory.mkdirs();
         }
+    }
+
+    public void reloadConfigs(){
+        languageConfig = new LanguageConfig(getDataFolder(), "language");
+        languageConfig.initialize();
+        generalConfig = new GeneralConfig(getDataFolder(), "General-Config");
+        generalConfig.initialize();
     }
 
     public void reloadWands(){
