@@ -451,4 +451,34 @@ public class Util {
         // Update inventory (not always necessary, but good practice after inventory modifications)
         player.updateInventory();
     }
+
+    public static String formatMaterialName(Material material) {
+        // Special cases where the name does not follow the usual capitalization rules
+        if (material == Material.TNT) {
+            return "TNT";
+        }
+
+        // Add more special cases here as needed
+
+        // Convert the material name to lowercase, then split it by underscores
+        String[] parts = material.name().toLowerCase().split("_");
+        StringBuilder formattedName = new StringBuilder();
+
+        for (int i = 0; i < parts.length; i++) {
+            String part = parts[i];
+            // Check if part is "of" or "the", and it's not the first word
+            if (i > 0 && ("of".equals(part) || "the".equals(part))) {
+                formattedName.append(part); // Keep it lowercase
+            } else {
+                // Capitalize the first letter of the part and add it to the formatted name
+                formattedName.append(part.substring(0, 1).toUpperCase())
+                        .append(part.substring(1));
+            }
+            // Add a space after each word (or directly append the word if handling spaces differently)
+            formattedName.append(" ");
+        }
+
+        // Trim the trailing space and return the formatted name
+        return formattedName.toString().trim();
+    }
 }

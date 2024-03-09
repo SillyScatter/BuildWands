@@ -36,6 +36,7 @@ public class BuildWandCommandSystem extends SYSCommandBranch {
         addCommand(new SYSCommand("reload")
                 .setArguments()
                 .executes((commandSender, strings) -> {
+                    BuildWands.plugin.reloadConfigs();
                     BuildWands.plugin.reloadWands();
                     Util.sendMessage(commandSender, "&aBuildWands reloaded!");
                 }));

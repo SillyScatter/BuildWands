@@ -2,6 +2,7 @@ package me.sllly.buildwands;
 
 import me.sllly.buildwands.Util.Util;
 import me.sllly.buildwands.commands.BuildWandCommandSystem;
+import me.sllly.buildwands.files.EditMaterialsConfig;
 import me.sllly.buildwands.files.GeneralConfig;
 import me.sllly.buildwands.files.LanguageConfig;
 import me.sllly.buildwands.files.WandConfig;
@@ -19,6 +20,7 @@ public final class BuildWands extends JavaPlugin {
     public static int maxDistance = 5;
     public static LanguageConfig languageConfig;
     public static GeneralConfig generalConfig;
+    public static EditMaterialsConfig editMaterialsConfig;
 
     private File wandDirectory;
 
@@ -54,6 +56,8 @@ public final class BuildWands extends JavaPlugin {
         languageConfig.initialize();
         generalConfig = new GeneralConfig(getDataFolder(), "General-Config");
         generalConfig.initialize();
+        editMaterialsConfig = new EditMaterialsConfig(getDataFolder(), "edit-materials-config");
+        editMaterialsConfig.initialize();
     }
 
     public void reloadWands(){
@@ -74,5 +78,4 @@ public final class BuildWands extends JavaPlugin {
         }
         Util.log("&aSuccessfully registered wands: &2&l"+count);
     }
-
 }
