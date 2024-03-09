@@ -2,6 +2,7 @@ package me.sllly.buildwands.menus;
 
 import com.octanepvp.splityosis.menulib.MenuItem;
 import me.sllly.buildwands.BuildWands;
+import me.sllly.buildwands.Util.NbtApiUtils;
 import me.sllly.buildwands.Util.Util;
 import me.sllly.buildwands.objects.Wand;
 import org.bukkit.Material;
@@ -19,7 +20,37 @@ public class MaterialMenuItem extends MenuItem {
         executes((inventoryClickEvent, menu) -> {
             Player player = (Player) inventoryClickEvent.getWhoClicked();
             int availableSlots = Util.countEmptySlots(player);
+            int maxStackSize = material.getMaxStackSize();
+            int potentialMax = maxStackSize*availableSlots;
+            int amountToGive;
 
+            if (!NbtApiUtils.hasNBTKey(player.getInventory().getItemInMainHand(), Wand.nbtKey + "-wandid")) {
+                Util.sendMessage(player, BuildWands.languageConfig.antiDupe);
+                player.closeInventory();
+                return;
+            }
+
+            if (inventoryClickEvent.isShiftClick()){
+                amountToGive = Math.min(potentialMax, amount);
+                int newAmount = amount-amountToGive;
+                if (newAmount == 0){
+                    wand.getMaterialAmounts().remove(material);
+                }else {
+                    wand.getMaterialAmounts().put(material, newAmount);
+                }
+            }else {
+                amountToGive = Math.min(maxStackSize, amount);
+                int newAmount = amount-amountToGive;
+                if (newAmount == 0){
+                    wand.getMaterialAmounts().remove(material);
+                }else {
+                    wand.getMaterialAmounts().put(material, newAmount);
+                }
+            }
+            wand.updateWandItem();
+            player.getInventory().setItemInMainHand(wand.getWandItem());
+            Util.giveItemsToPlayer(player, new ItemStack(material), amountToGive);
+            new EditMaterialsGUI(wand).open(player);
         });
     }
 

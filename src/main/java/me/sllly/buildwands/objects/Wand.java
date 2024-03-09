@@ -9,6 +9,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.util.RayTraceResult;
 
 import java.util.*;
@@ -56,21 +57,17 @@ public class Wand {
         List<String> nbtKeys = NbtApiUtils.getNBTKeys(wandItem);
         String nbtMaterialKey = nbtKey+"-material-";
         for (String key : nbtKeys) {
-            //Util.broadcast(key);
             if (key.startsWith(nbtMaterialKey)) {
-                //Util.broadcast("yes");
                 String materialString = key.substring(nbtMaterialKey.length());
                 Material material = Material.getMaterial(materialString.toUpperCase());
                 String intString = NbtApiUtils.getNBTString(wandItem, key);
                 int amount = Integer.parseInt(intString);
-                //Util.broadcast("amount = "+amount);
                 materialAmounts.put(material, amount);
             }
         }
     }
 
     public void updateWandItem(){
-        //Util.broadcast("updateWandItem");
         wandItem = originalItem.clone();
         wandItem = Util.replaceTextInItem(wandItem, "%durability%", durability+"");
         wandItem = Util.replaceTextInItem(wandItem, "%radius%", radius+"");
@@ -82,12 +79,33 @@ public class Wand {
         }
         wandItem = NbtApiUtils.applyNBTString(wandItem, nbtKey+"-wandid", wandId);
 
-
+        List<String> extraLore = new ArrayList<>();
         for (Map.Entry<Material, Integer> materialIntegerEntry : materialAmounts.entrySet()) {
-            //Util.broadcast("&aadding NBT");
             wandItem = NbtApiUtils.applyNBTString(wandItem, nbtKey+"-material-"+materialIntegerEntry.getKey().toString().toLowerCase(),
                     materialIntegerEntry.getValue()+"");
+
+            extraLore.add(BuildWands.generalConfig.materialLoreFormat.replace("%material%", Util.formatMaterialName(materialIntegerEntry.getKey()))
+                    .replace("%amount%", Util.formatInt(materialIntegerEntry.getValue())));
         }
+
+        List<String> lore = Util.getLore(wandItem);
+        int count = -1;
+        boolean contains = false;
+        for (String s : lore) {
+            count++;
+            if (s.contains("%materials%")){
+                contains = true;
+            }
+        }
+        if (contains){
+            lore.remove(count);
+            for (String s : extraLore) {
+                lore.add(count, s);
+            }
+        }
+        ItemMeta itemMeta = wandItem.getItemMeta();
+        itemMeta.setLore(Util.colorize(lore));
+        wandItem.setItemMeta(itemMeta);
     }
 
     public List<Block> findBlocks(Player player){

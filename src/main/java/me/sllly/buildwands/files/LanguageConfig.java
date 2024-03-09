@@ -24,4 +24,10 @@ public class LanguageConfig extends AnnotatedConfig {
 
     @ConfigField(path = "not-enough-durability")
     public String notEnoughDurability = "&cYour build wand doesn't have enough durability to do this!";
+
+    @ConfigField(path = "opening-menu")
+    public String openingMenu = "&aOpening Menu...";
+
+    @ConfigField(path = "anti-dupe")
+    public String antiDupe = "&cYou can't have a Wand GUI open without having a wand in your hand!";
 }

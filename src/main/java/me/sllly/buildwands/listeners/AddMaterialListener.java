@@ -20,6 +20,9 @@ public class AddMaterialListener implements Listener {
         if (e.getWhoClicked().getGameMode() == GameMode.CREATIVE){
             return;
         }
+        if (e.getClickedInventory() == null){
+            return;
+        }
         if (e.getClickedInventory().getType() != InventoryType.PLAYER){
             return;
         }

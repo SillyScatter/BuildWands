@@ -14,4 +14,7 @@ public class GeneralConfig extends AnnotatedConfig {
 
     @ConfigField(path = "blacklisted-materials")
     public List<String> blacklistedMaterials = Arrays.asList("TNT", "DIAMOND_BLOCK");
+
+    @ConfigField(path = "material-lore-format")
+    public String materialLoreFormat = "&4*&7 %material%: &c%amount%";
 }

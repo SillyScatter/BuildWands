@@ -19,7 +19,7 @@ public class EditMaterialsConfig extends AnnotatedConfig {
     public int menuSize = 36;
 
     @ConfigField(path = "general-items.menu-title")
-    public String menuTitle = "Cosmetics";
+    public String menuTitle = "Edit Materials";
 
     @ConfigField(path = "general-items.border.item")
     public ItemStack borderItem = Util.createItemStack(Material.GRAY_STAINED_GLASS_PANE, 1, "&7");

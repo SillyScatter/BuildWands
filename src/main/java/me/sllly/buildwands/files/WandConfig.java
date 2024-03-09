@@ -26,7 +26,7 @@ public class WandConfig extends AnnotatedConfig {
     @ConfigField(path = "max-unique-materials")
     public int maxUniqueMaterials = 10;
 
-    @ConfigField(path = "wand-item", comment = "placeholders are %radius% and %durability%")
+    @ConfigField(path = "wand-item", comment = "placeholders are %radius% and %durability% and %materials%")
     public ItemStack wandItem = Util.createItemStack(Material.BONE, 1, "&7&lDefault Build Wand",
-            "&4*&7 Radius: &c%radius%", "&4*&7 Durability: &c%durability%");
+            "&4*&7 Radius: &c%radius%", "&4*&7 Durability: &c%durability%", "&7-", "%materials%");
 }

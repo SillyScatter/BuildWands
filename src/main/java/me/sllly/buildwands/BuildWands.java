@@ -6,9 +6,7 @@ import me.sllly.buildwands.files.EditMaterialsConfig;
 import me.sllly.buildwands.files.GeneralConfig;
 import me.sllly.buildwands.files.LanguageConfig;
 import me.sllly.buildwands.files.WandConfig;
-import me.sllly.buildwands.listeners.AddMaterialListener;
-import me.sllly.buildwands.listeners.BuildListener;
-import me.sllly.buildwands.listeners.ParticleListener;
+import me.sllly.buildwands.listeners.*;
 import me.sllly.buildwands.objects.Wand;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -33,6 +31,8 @@ public final class BuildWands extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new BuildListener(), this);
         getServer().getPluginManager().registerEvents(new ParticleListener(), this);
         getServer().getPluginManager().registerEvents(new AddMaterialListener(), this);
+        getServer().getPluginManager().registerEvents(new OpenMenuListener(), this);
+        getServer().getPluginManager().registerEvents(new AddMaterialViaGUIListener(), this);
 
         initializeDirectories();
         reloadConfigs();
